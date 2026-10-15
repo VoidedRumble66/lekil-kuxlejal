@@ -59,10 +59,9 @@ Set-Location 'C:\Users\mende\Documents\lekil-kuxlejal'
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check.ps1
 ```
 
-Equivale a:
+El script crea temporales aislados bajo `.run/checks/`, ejecuta las 30 pruebas y compila el frontend. Evita reutilizar carpetas de pytest creadas por otra cuenta de Windows. Para compilar solamente la interfaz:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest backend/tests -q
 Set-Location frontend
 npm.cmd run build
 ```

@@ -30,7 +30,7 @@ La entrega activa es **Fase 1** de la especificación en `docs/referencias/ESPEC
 
 ## Verificación
 
-- Ejecutar `python -m pytest backend/tests` con el entorno del proyecto y `npm run build` en `frontend/`.
+- Usar `scripts/check.ps1`: ejecuta pytest con temporales aislados por ejecución y `npm run build` en `frontend/`. Para verificaciones individuales, usar el entorno Python del proyecto y una base temporal propia.
 - Probar persistencia con bases temporales. Nunca introducir fixtures en `backend/data/`.
 - Comprobar estados de error y ausencia de datos. Ningún botón debe aparentar una función todavía no implementada.
 - Documentar límites y resultados reales en `docs/VERIFICACION_FASE_1.md`.
