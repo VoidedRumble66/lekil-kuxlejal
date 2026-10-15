@@ -17,12 +17,19 @@ export interface Zone {
 export interface Device {
   id: string
   name: string
-  kind: 'esp32-s3'
+  kind: 'esp32' | 'esp32-s3'
   model: string | null
   serial_port: string | null
-  status: 'not_configured'
+  status: 'not_configured' | 'connected' | 'disconnected' | 'stale'
   created_at: string
   last_seen_at: string | null
+  hardware_id: string | null
+  firmware_version: string | null
+  boot_id: string | null
+  last_sequence: number | null
+  uptime_ms: number | null
+  last_heartbeat_at: string | null
+  heartbeat_timeout_seconds: number
 }
 
 export interface Measurement {

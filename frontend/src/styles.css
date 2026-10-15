@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+.serial-device-card { padding-bottom: 16px; border-bottom: 1px solid #2b3e33; }
+.serial-device-card .registration-item { border-bottom: 0; }
+.serial-device-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin: 12px 0 18px; }
+.serial-device-fields dt { color: #a3b3a8; font-size: 12px; margin-bottom: 5px; }
+.serial-device-fields dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.status-pill.serial-connected { color: #9bba8d; background: #263d2e; }
+
 :root {
   font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
   color: #edf0e7;

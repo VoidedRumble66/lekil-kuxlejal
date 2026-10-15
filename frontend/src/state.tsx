@@ -7,15 +7,16 @@ export interface Resource<T> {
   data: T | undefined
   loading: boolean
   error: string | null
-  reload: () => Promise<void>
+  reload: (background?: boolean) => Promise<void>
 }
 
 function useResource<T>(loader: () => Promise<T>): Resource<T> {
   const [state, setState] = useState<{ data: T | undefined; loading: boolean; error: string | null }>({ data: undefined, loading: true, error: null })
   const sequence = useRef(0)
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (background = false) => {
     const current = ++sequence.current
-    setState({ data: undefined, loading: true, error: null })
+    setState(previous => background && previous.data !== undefined
+      ? previous : { data: undefined, loading: true, error: null })
     try {
       const data = await loader()
       if (current === sequence.current) setState({ data, loading: false, error: null })

@@ -37,9 +37,9 @@ function Shell() {
       <span className="nav-label">ESPACIO DE TRABAJO</span>
       <nav className="side-nav" aria-label="Navegación principal">{navigation.map(({ path, label, icon: Icon }) => <NavLink key={path} to={path} end={path === '/'}><Icon size={19} strokeWidth={1.7} /><span>{label}</span><ChevronRight className="nav-chevron" size={14} /></NavLink>)}</nav>
       <div className="sidebar-spacer" />
-      <div className="sidebar-observation"><span className="eyebrow"><span className="small-dot" />FASE 1</span><h3>Observar es el comienzo.</h3><p>Datos reales, conocimiento compartido y decisiones responsables.</p><span className="sidebar-team">A MARTE CHIAPAS <ExternalLink size={11} aria-hidden="true" /></span></div>
+      <div className="sidebar-observation"><span className="eyebrow"><span className="small-dot" />FASE 2A</span><h3>Observar es el comienzo.</h3><p>Datos reales, conocimiento compartido y decisiones responsables.</p><span className="sidebar-team">A MARTE CHIAPAS <ExternalLink size={11} aria-hidden="true" /></span></div>
       <NavLink to="/configuracion" className="settings-link"><Settings2 size={18} />Configuración<ChevronRight size={14} /></NavLink>
-      <div className="sidebar-footer">MARS CHALLENGE 2026<span>v0.1 · Desarrollo local</span></div>
+      <div className="sidebar-footer">MARS CHALLENGE 2026<span>v0.2 · Desarrollo local</span></div>
     </aside>
 
     <div className="workspace">
