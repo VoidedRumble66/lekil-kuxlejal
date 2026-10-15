@@ -1,5 +1,6 @@
 .venv/
 node_modules/
+.npm-cache/
 dist/
 *.tsbuildinfo
 __pycache__/
