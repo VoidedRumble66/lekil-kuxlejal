@@ -2,7 +2,9 @@
 
 ## Alcance actual
 
-La entrega activa es **Fase 1** de la especificación en `docs/referencias/ESPECIFICACION_MAESTRA.txt`. No avanzar a la Fase 2 sin una nueva instrucción del usuario.
+La entrega activa autorizada es **Fase 2A: integración serial real del ESP32**, según el encargo del usuario. No avanzar a Fase 2B. Revisar únicamente código y documentación relevantes; no releer el expediente completo ni lanzar agentes paralelos.
+
+Placa identificada por el usuario: ESP32 clásico ESP32-D0WD-V3, CH340, COM6, 115200, PlatformIO `esp32dev`, Arduino. Sin sensores. El lector serial es un proceso independiente de sólo lectura; envía diagnósticos a FastAPI y nunca escribe directamente en SQLite. No hay actuación ni datos ambientales sintéticos.
 
 ## Integridad de datos
 
@@ -33,5 +35,5 @@ La entrega activa es **Fase 1** de la especificación en `docs/referencias/ESPEC
 - Usar `scripts/check.ps1`: ejecuta pytest con temporales aislados por ejecución y `npm run build` en `frontend/`. Para verificaciones individuales, usar el entorno Python del proyecto y una base temporal propia.
 - Probar persistencia con bases temporales. Nunca introducir fixtures en `backend/data/`.
 - Comprobar estados de error y ausencia de datos. Ningún botón debe aparentar una función todavía no implementada.
-- Documentar límites y resultados reales en `docs/VERIFICACION_FASE_1.md`.
+- Documentar límites y resultados de esta entrega en `docs/FASE_2A_SERIAL.md`; conservar el informe histórico de Fase 1.
 - Mantener cambios y commits acotados. No incluir entornos, dependencias, bases operativas ni documentos privados en Git.

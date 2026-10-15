@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import CheckConstraint, Column
+from sqlalchemy import BigInteger, CheckConstraint, Column, JSON, UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 from .database import UTCDateTime, utc_now
@@ -22,18 +22,43 @@ class Zone(SQLModel, table=True):
 class Device(SQLModel, table=True):
     __tablename__ = "devices"
     __table_args__ = (
-        CheckConstraint("kind = 'esp32-s3'", name="ck_devices_kind"),
-        CheckConstraint("status = 'not_configured'", name="ck_devices_phase1_status"),
+        CheckConstraint("kind IN ('esp32', 'esp32-s3')", name="ck_devices_kind"),
+        CheckConstraint("status IN ('not_configured', 'connected', 'disconnected')", name="ck_devices_status"),
     )
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(max_length=80)
-    kind: str = Field(default="esp32-s3", max_length=32)
+    kind: str = Field(default="esp32", max_length=32)
     model: str | None = Field(default=None, max_length=120)
     serial_port: str | None = Field(default=None, max_length=128)
     status: str = Field(default="not_configured", max_length=32)
     created_at: datetime = Field(default_factory=utc_now, sa_column=Column(UTCDateTime(), nullable=False))
     last_seen_at: datetime | None = Field(default=None, sa_column=Column(UTCDateTime(), nullable=True))
+    hardware_id: str | None = Field(default=None, max_length=64, index=True, unique=True)
+    firmware_version: str | None = Field(default=None, max_length=120)
+    boot_id: str | None = Field(default=None, max_length=16)
+    last_sequence: int | None = Field(default=None, sa_type=BigInteger)
+    uptime_ms: int | None = Field(default=None, sa_type=BigInteger)
+    last_heartbeat_at: datetime | None = Field(default=None, sa_column=Column(UTCDateTime(), nullable=True))
+    connection_updated_at: datetime | None = Field(default=None, sa_column=Column(UTCDateTime(), nullable=True))
+
+
+class DeviceEvent(SQLModel, table=True):
+    __tablename__ = "device_events"
+    __table_args__ = (
+        UniqueConstraint("device_id", "boot_id", "sequence", name="uq_device_events_message"),
+        CheckConstraint("kind IN ('hello', 'heartbeat', 'disconnected', 'protocol_error', 'reader_stopped')", name="ck_device_events_kind"),
+    )
+    id: str = Field(primary_key=True, max_length=32)
+    device_id: UUID | None = Field(default=None, foreign_key="devices.id", ondelete="RESTRICT", index=True)
+    port: str = Field(max_length=128)
+    baud_rate: int = 115200
+    kind: str = Field(max_length=32)
+    boot_id: str | None = Field(default=None, max_length=16)
+    sequence: int | None = Field(default=None, sa_type=BigInteger)
+    received_at: datetime = Field(sa_column=Column(UTCDateTime(), nullable=False, index=True))
+    recorded_at: datetime = Field(default_factory=utc_now, sa_column=Column(UTCDateTime(), nullable=False))
+    payload: dict = Field(sa_column=Column(JSON, nullable=False))
 
 
 class Measurement(SQLModel, table=True):

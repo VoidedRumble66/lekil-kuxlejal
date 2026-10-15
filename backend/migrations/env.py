@@ -4,7 +4,7 @@ from alembic import context
 from sqlmodel import SQLModel
 
 from app import models  # noqa: F401: registra metadatos para autogeneración
-from app.database import build_engine, resolve_database_url
+from app.database import build_engine, resolve_database_url, migration_connection
 
 config = context.config
 target_metadata = SQLModel.metadata
@@ -31,6 +31,6 @@ else:
         run_migrations(connection)
     else:
         engine = build_engine()
-        with engine.begin() as connection:
+        with migration_connection(engine) as connection:
             run_migrations(connection)
         engine.dispose()

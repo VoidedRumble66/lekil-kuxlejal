@@ -4,8 +4,10 @@ from collections.abc import Generator
 from contextlib import asynccontextmanager
 from typing import Annotated
 from uuid import UUID
+from ipaddress import ip_address
+import hmac
 
-from fastapi import APIRouter, Depends, FastAPI, Query, Request, Response, status
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import func, text
@@ -13,8 +15,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
 
 from .database import build_engine, migrate_database, utc_now
-from .models import Device, Measurement, Zone
-from .schemas import DeviceCreate, DeviceRead, HealthRead, TelemetryRead, ZoneCreate, ZoneRead
+from .models import Device, DeviceEvent, Measurement, Zone
+from .schemas import DeviceCreate, DeviceRead, DeviceEventRead, HealthRead, TelemetryRead, ZoneCreate, ZoneRead
+from .device_service import device_view, ingest_event, load_ingest_token
+from .serial_protocol import SerialEventInput
 
 
 def get_session(request: Request) -> Generator[Session, None, None]:
@@ -52,17 +56,37 @@ def create_zone(payload: ZoneCreate, session: DatabaseSession) -> Zone:
 
 
 @router.get("/devices", response_model=list[DeviceRead])
-def list_devices(session: DatabaseSession) -> list[Device]:
-    return list(session.exec(select(Device).order_by(Device.created_at, Device.id)).all())
+def list_devices(session: DatabaseSession) -> list[DeviceRead]:
+    return [device_view(device) for device in session.exec(select(Device).order_by(Device.created_at, Device.id)).all()]
 
 
 @router.post("/devices", response_model=DeviceRead, status_code=status.HTTP_201_CREATED)
-def create_device(payload: DeviceCreate, session: DatabaseSession) -> Device:
+def create_device(payload: DeviceCreate, session: DatabaseSession) -> DeviceRead:
     device = Device(**payload.model_dump())
     session.add(device)
     session.commit()
     session.refresh(device)
-    return device
+    return device_view(device)
+
+
+@router.get("/devices/{device_id}/events", response_model=list[DeviceEventRead])
+def device_events(device_id: UUID, session: DatabaseSession, limit: Annotated[int, Query(ge=1, le=200)] = 50):
+    if session.get(Device, device_id) is None:
+        raise HTTPException(404, "Dispositivo no encontrado.")
+    return session.exec(select(DeviceEvent).where(DeviceEvent.device_id == device_id)
+                        .order_by(DeviceEvent.received_at.desc(), DeviceEvent.id).limit(limit)).all()
+
+
+@router.post("/internal/serial-events")
+def receive_serial(event: SerialEventInput, request: Request, session: DatabaseSession):
+    try:
+        local = request.client is not None and ip_address(request.client.host).is_loopback
+    except ValueError:
+        local = False
+    supplied = request.headers.get("X-Serial-Token", "")
+    if not local or request.headers.get("origin") or not hmac.compare_digest(supplied, request.app.state.serial_token):
+        raise HTTPException(403, "Interfaz reservada al lector serial local autorizado.")
+    return ingest_event(session, event)
 
 
 @router.get("/telemetry", response_model=TelemetryRead)
@@ -93,15 +117,16 @@ def create_app(database_url: str | None = None) -> FastAPI:
     async def lifespan(application: FastAPI):
         try:
             migrate_database(engine)
+            application.state.serial_token = load_ingest_token(str(engine.url.database))
             yield
         finally:
             engine.dispose()
 
     application = FastAPI(
         title="LEKIL KUXLEJAL · DOMO VITAL",
-        version="0.1.0",
+        version="0.2.0",
         description=(
-            "Fase 1: configuración manual y consulta de telemetría real. "
+            "Fase 2A: configuración y diagnóstico serial del ESP32, sin sensores. "
             "Modo observación. Control físico deshabilitado. "
             "API local sin autenticación; iniciar exclusivamente en 127.0.0.1."
         ),

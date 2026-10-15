@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -71,10 +72,29 @@ def build_engine(database_url: str | None = None) -> Engine:
     return engine
 
 
+@contextmanager
+def migration_connection(engine: Engine):
+    """Batch de SQLite con FK verificadas antes de confirmar, sólo al migrar."""
+    with engine.connect() as connection:
+        connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+        connection.commit()
+        try:
+            with connection.begin():
+                # Transacción física también para DDL en sqlite3 legacy mode.
+                connection.exec_driver_sql("BEGIN IMMEDIATE")
+                yield connection
+                if connection.exec_driver_sql("PRAGMA foreign_key_check").fetchall():
+                    raise RuntimeError("La migración violaría la integridad referencial.")
+        finally:
+            connection.rollback()
+            connection.exec_driver_sql("PRAGMA foreign_keys=ON")
+            connection.commit()
+
+
 def migrate_database(engine: Engine) -> None:
     """Aplica migraciones versionadas antes de admitir solicitudes."""
     config = Config(str(BACKEND_DIR / "alembic.ini"))
     config.set_main_option("script_location", str(BACKEND_DIR / "migrations"))
-    with engine.begin() as connection:
+    with migration_connection(engine) as connection:
         config.attributes["connection"] = connection
         command.upgrade(config, "head")

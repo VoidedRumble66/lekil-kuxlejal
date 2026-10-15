@@ -41,12 +41,33 @@ class DeviceRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
     name: str
-    kind: Literal["esp32-s3"]
+    kind: Literal["esp32", "esp32-s3"]
     model: str | None
     serial_port: str | None
-    status: Literal["not_configured"]
+    status: Literal["not_configured", "connected", "disconnected", "stale"]
     created_at: AwareDatetime
     last_seen_at: AwareDatetime | None
+    hardware_id: str | None
+    firmware_version: str | None
+    boot_id: str | None
+    last_sequence: int | None
+    uptime_ms: int | None
+    last_heartbeat_at: AwareDatetime | None
+    heartbeat_timeout_seconds: int = 10
+
+
+class DeviceEventRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    device_id: UUID | None
+    port: str
+    baud_rate: int
+    kind: str
+    boot_id: str | None
+    sequence: int | None
+    received_at: AwareDatetime
+    recorded_at: AwareDatetime
+    payload: dict
 
 
 class MeasurementRead(BaseModel):
