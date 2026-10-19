@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import type { FormEvent } from 'react'
 import { criteria, emptyPassport, passportOf } from '../seedApi'
 import type { Assessment, Criterion, Passport, Scores, SeedLot, WeightProfile, Weights } from '../seedApi'
+import { suggestSeedIdentifier } from './seedRegistration'
 
 export const passportLabels = {
   scientific_name: 'Nombre científico', variety: 'Variedad', provenance: 'Procedencia documentada',
@@ -11,38 +12,73 @@ export const passportLabels = {
   observations: 'Observaciones', information_source: 'Fuente de la información',
 } as const satisfies Partial<Record<keyof Passport, string>>
 export const authLabels = { pending: 'Pendiente de comprobar', authorized: 'Uso autorizado documentado', denied: 'Uso denegado documentado' }
-export const kindLabels = { real: 'Lote real', hypothetical: 'Ejemplo hipotético' }
+export const kindLabels = { real: 'Semillas físicas', hypothetical: 'Hipotética · sin inventario' }
 export const display = (value: unknown) => value === null || value === undefined || value === '' ? 'Sin datos' : String(value)
 
-export function LotEditor({ lot, busy, save, cancel }: { lot: SeedLot | null; busy: boolean; save: (value: Passport) => void; cancel: () => void }) {
-  const [value, setValue] = useState<Passport>(() => lot ? passportOf(lot) : emptyPassport())
+const fieldHelp: Partial<Record<keyof Passport, string>> = {
+  scientific_name: 'El nombre usado en ciencia, si se conoce. Puedes consultarlo en una etiqueta o documento; no lo adivines.',
+  variety: 'El nombre de la variedad, si está documentado. No siempre coincide con el nombre común.',
+  provenance: 'De dónde vienen las semillas o la información. Por ejemplo, una etiqueta o una ficha de entrega.',
+  custodian_entity: 'La comunidad o institución que cuida las semillas, si está documentada. Evita datos personales.',
+  authorization_source: 'Referencia del documento o acuerdo que respalda el permiso o la denegación.',
+  use_conditions: 'Para qué se permite usar las semillas y qué límites deben respetarse, según el acuerdo.',
+  received_on: 'Fecha de recepción, si se conoce. En una ficha de estudio puede quedar sin datos.',
+  storage_conditions: 'Sólo las condiciones conocidas, por ejemplo las indicadas en la etiqueta. No se recomiendan valores automáticamente.',
+  information_source: 'De dónde salió la información: documento, etiqueta o registro de prueba, por ejemplo.',
+}
+
+export function LotEditor({ lot, initialKind = 'real', existingCodes, showTests = false, busy, save, cancel }: {
+  lot: SeedLot | null; initialKind?: Passport['source_kind']; existingCodes: string[]; showTests?: boolean
+  busy: boolean; save: (value: Passport) => void; cancel: () => void
+}) {
+  const [value, setValue] = useState<Passport>(() => lot ? passportOf(lot) : {
+    ...emptyPassport(), source_kind: initialKind, code: suggestSeedIdentifier(initialKind, existingCodes),
+  })
+  const helpId = useId()
   const change = <K extends keyof Passport>(key: K, next: Passport[K]) => setValue(previous => ({ ...previous, [key]: next }))
-  const field = (key: keyof typeof passportLabels, multiline = false) => <label key={key}>{passportLabels[key]}{multiline
-    ? <textarea maxLength={2000} placeholder="Sin datos" value={String(value[key] ?? '')} onChange={e => change(key, e.target.value || null)} />
-    : <input type={key === 'received_on' ? 'date' : 'text'} maxLength={key === 'scientific_name' || key === 'variety' ? 120 : 2000} placeholder="Sin datos" value={String(value[key] ?? '')} onChange={e => change(key, e.target.value || null)} />}</label>
+  const field = (key: keyof typeof passportLabels, multiline = false) => {
+    const required = key === 'authorization_source' ? value.authorization_status !== 'pending'
+      : key === 'use_conditions' && value.authorization_status === 'authorized'
+    const props = { required, 'aria-describedby': fieldHelp[key] ? `${helpId}-${key}` : undefined,
+      placeholder: 'Sin datos', value: String(value[key] ?? ''), onChange: (e: { target: { value: string } }) => change(key, e.target.value || null) }
+    return <div key={key}><label>{passportLabels[key]}{required ? ' *' : ''}{multiline
+      ? <textarea maxLength={2000} {...props} />
+      : <input type={key === 'received_on' ? 'date' : 'text'} maxLength={key === 'scientific_name' || key === 'variety' ? 120 : 2000} {...props} />}</label>
+      {fieldHelp[key] && <small className="seed-field-help" id={`${helpId}-${key}`}>{fieldHelp[key]}</small>}</div>
+  }
   function submit(event: FormEvent) { event.preventDefault(); save(value) }
-  return <form className="panel seed-panel seed-form" onSubmit={submit} aria-label={lot ? 'Editar lote' : 'Registrar lote'}><fieldset disabled={busy}>
-    <legend>{lot ? `Editar ${lot.code}` : 'Registrar un lote'}</legend>
-    <p>Registra sólo información disponible. Los espacios vacíos se conservan como «Sin datos». No incluyas nombres personales, teléfonos ni datos privados de custodios o informantes: usa la entidad o comunidad y una referencia documental local.</p>
-    <div className="seed-fields"><label>Nombre común *<input required maxLength={120} value={value.common_name} onChange={e => change('common_name', e.target.value)} /></label>
-      <label>Código de lote *<input required maxLength={120} value={value.code} onChange={e => change('code', e.target.value)} /></label>
-      <label>Tipo de registro *<select value={value.source_kind} disabled={!!lot} onChange={e => change('source_kind', e.target.value as Passport['source_kind'])}><option value="real">Lote real</option><option value="hypothetical">Ejemplo hipotético</option></select></label>
-      {field('scientific_name')}{field('variety')}{field('received_on')}
-      <label>Cantidad disponible<input type="number" min="0" max="1000000000" step="any" placeholder="Sin datos" value={value.quantity ?? ''} onChange={e => change('quantity', e.target.value === '' ? null : Number(e.target.value))} /></label>
-      <label>Unidad{value.quantity !== null ? ' *' : ''}<input required={value.quantity !== null} maxLength={120} placeholder="Sin datos" value={value.unit ?? ''} onChange={e => change('unit', e.target.value || null)} /></label>
+  return <form className="panel seed-panel seed-form" onSubmit={submit} onInvalidCapture={event => {
+    // Permite enfocar un campo obligatorio aunque su sección esté cerrada.
+    for (let parent = (event.target as HTMLElement).parentElement; parent; parent = parent.parentElement) {
+      if (parent instanceof HTMLDetailsElement) parent.open = true
+    }
+  }} aria-label={lot ? 'Editar semillas' : 'Agregar semillas'}><fieldset disabled={busy}>
+    <legend>{lot ? `Editar semillas · ${lot.code}` : value.source_kind === 'real' ? 'Tengo semillas' : 'Quiero estudiar semillas'}</legend>
+    <p>{value.source_kind === 'real' ? 'Registra semillas que tienes físicamente. Puedes completar la cantidad y otros datos después.' : 'Esta ficha es candidata o hipotética. No confirma que tengas semillas ni registra existencias físicas.'}</p>
+    <div className="seed-fields seed-essential-fields"><label>Nombre de las semillas *<input required maxLength={120} placeholder="El nombre con el que las conoces" value={value.common_name} onChange={e => change('common_name', e.target.value)} /></label>
+      <div><label>Tipo de registro *<select value={value.source_kind} disabled={!!lot} onChange={e => change('source_kind', e.target.value as Passport['source_kind'])}><option value="real">Semillas físicas</option><option value="hypothetical">Ficha hipotética o candidata</option></select></label>{lot && <small className="seed-field-help">El tipo se conserva para no mezclar registros físicos y estudios.</small>}</div>
+      <div><label>Identificador *<input required maxLength={120} aria-describedby={`${helpId}-code`} value={value.code} onChange={e => change('code', e.target.value)} /></label><small className="seed-field-help" id={`${helpId}-code`}>Código para distinguir esta ficha y seguir su historia. {lot ? 'Se conserva el identificador existente; puedes editarlo.' : 'Sugerimos uno único; puedes editarlo.'}</small></div>
     </div>
-    <h3>Procedencia y permiso de uso</h3><div className="seed-fields">{field('provenance')}{field('custodian_entity')}
+    <details className="seed-form-section"><summary>Origen y uso responsable</summary><p>Completa sólo lo documentado. Los datos desconocidos permanecen como «Sin datos»; el permiso sigue pendiente hasta que se documente.</p><div className="seed-fields">{field('provenance')}{field('custodian_entity')}
       <label>Estado de autorización<select value={value.authorization_status} onChange={e => change('authorization_status', e.target.value as Passport['authorization_status'])}>{Object.entries(authLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
       {field('authorization_source', true)}{field('use_conditions', true)}
-    </div><p>Para documentar autorización o denegación se requiere una fuente. El uso autorizado también necesita condiciones explícitas. La aplicación no concede permisos.</p>
-    <h3>Conservación y documentación</h3><div className="seed-fields">{field('storage_conditions', true)}{field('container')}{field('location')}{field('observations', true)}{field('information_source', true)}</div>
-    <h3>Pruebas de germinación y viabilidad</h3><p>Sin pruebas registradas significa «Sin datos». Fecha y método desconocidos quedarán pendientes de comprobar; no se estiman resultados.</p>
+    </div><p>Registrar información no concede permiso de uso. Evita nombres, teléfonos y otros datos personales de custodios o informantes.</p></details>
+    <details className="seed-form-section"><summary>Cómo se conservan</summary><div className="seed-fields">{field('storage_conditions', true)}{field('container')}{field('location')}</div></details>
+    <details className="seed-form-section" open={showTests || undefined}><summary>Más información</summary><div className="seed-fields">{field('variety')}{field('scientific_name')}{field('received_on')}
+      <div><label>{value.source_kind === 'real' ? 'Cantidad disponible (opcional)' : 'Cantidad hipotética (opcional)'}<input type="number" min="0" max="1000000000" step="any" placeholder="Sin datos" value={value.quantity ?? ''} onChange={e => change('quantity', e.target.value === '' ? null : Number(e.target.value))} /></label><small className="seed-field-help">{value.source_kind === 'real' ? 'Anota sólo la cantidad que conoces. Dejarla vacía no significa cero.' : 'Si anotas una cantidad, se conserva como supuesto de estudio; no cuenta como inventario físico.'}</small></div>
+      <label>Unidad{value.quantity !== null ? ' *' : ''}<input required={value.quantity !== null} maxLength={120} placeholder="Ej.: semillas o g" value={value.unit ?? ''} onChange={e => change('unit', e.target.value || null)} /></label>
+      {field('observations', true)}{field('information_source', true)}
+    </div>
+    {lot && <details className="seed-form-section" open={showTests || undefined}><summary>Pruebas de germinación y viabilidad</summary><p>Germinación: comprobar si las semillas brotan. Viabilidad: estudiar si pueden seguir vivas y germinar. Registra el resultado real de una prueba, su fuente y, cuando se conozcan, fecha y método; por ejemplo, el protocolo que se siguió. No se estiman resultados.</p>
     {value.tests.map((test, index) => <fieldset className="seed-test" key={index}><legend>Prueba {index + 1}</legend><div className="seed-fields">
       <label>Tipo de prueba<select value={test.kind} onChange={e => change('tests', value.tests.map((item, i) => i === index ? { ...item, kind: e.target.value as typeof test.kind } : item))}><option value="germination">Germinación</option><option value="viability">Viabilidad</option></select></label>
       {(['result', 'tested_on', 'method', 'source'] as const).map(key => <label key={key}>{{ result: 'Resultado documentado *', tested_on: 'Fecha de prueba', method: 'Método de prueba', source: 'Fuente de la prueba *' }[key]}<input type={key === 'tested_on' ? 'date' : 'text'} required={key === 'result' || key === 'source'} maxLength={2000} value={test[key] ?? ''} placeholder="Sin datos" onChange={e => change('tests', value.tests.map((item, i) => i === index ? { ...item, [key]: e.target.value || (key === 'result' || key === 'source' ? '' : null) } : item))} /></label>)}
     </div><button className="button button-quiet" type="button" onClick={() => change('tests', value.tests.filter((_, i) => i !== index))}>Quitar prueba {index + 1} de esta edición</button></fieldset>)}
     <button className="button button-outline" type="button" disabled={value.tests.length >= 100} onClick={() => change('tests', [...value.tests, { kind: 'germination', result: '', tested_on: null, method: null, source: '' }])}>Añadir prueba documentada</button>
-    <div className="decision-actions"><button className="button button-gold" type="submit">{busy ? 'Guardando…' : 'Guardar lote'}</button><button className="button button-quiet" type="button" onClick={cancel}>Cancelar edición</button></div>
+    </details>}
+    </details>
+    {!lot && <p className="seed-field-help">Después de guardar podrás añadir pruebas de germinación, evaluar la ficha y consultar su historial.</p>}
+    <div className="decision-actions"><button className="button button-gold" type="submit">{busy ? 'Guardando…' : 'Guardar ficha'}</button><button className="button button-quiet" type="button" onClick={cancel}>Cancelar edición</button></div>
   </fieldset></form>
 }
 
@@ -57,6 +93,7 @@ export function AssessmentForm({ lot, profile, previous, busy, save }: { lot: Se
     save(scores, responsible)
   }
   return <form className="seed-form" onSubmit={submit} aria-label="Evaluación multicriterio"><fieldset disabled={busy}><legend>Evaluación provisional · {lot.code}</legend>
+    <p>Evaluar es revisar varios aspectos de estas semillas con la información disponible. El peso indica cuánto cuenta cada aspecto en la comparación; por ejemplo, 25 % significa una cuarta parte del resultado. Debes explicar cada nota e indicar de dónde salió la información.</p>
     <p>{profile.scale} Para recursos, una nota mayor expresa una preferencia por menor demanda documentada, no un consumo medido. Explica el contexto y la escala en cada justificación.</p>
     {previous && <p className="decision-warning">Se muestran las últimas puntuaciones para revisión. Guardar crea una nueva evaluación; conserva la anterior con su fecha, datos y pesos.</p>}
     <p>Deja la puntuación vacía si falta evidencia. Podrás guardar una evaluación incompleta; no tendrá puntuación global.</p>

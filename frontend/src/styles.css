@@ -616,6 +616,21 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .seed-tabs { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #3b4b33; padding: 0 0 17px; margin-bottom: 24px; }
 .seed-page .decision-table td { min-width: 155px; vertical-align: top; }
 .seed-workspace:focus { outline: none; }
+.seed-start { margin-top: 0; }
+.seed-entry-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin-top: 22px; }
+.seed-entry-choice { display: flex; align-items: flex-start; gap: 15px; padding: 22px; border: 1px solid #67754b; border-radius: 9px; background: #263821; color: #e3d0a7; text-align: left; cursor: pointer; min-width: 0; }
+.seed-entry-choice>svg { flex-shrink: 0; margin-top: 2px; }
+.seed-entry-choice strong { display: block; font-size: 17px; font-weight: 500; line-height: 1.5; }
+.seed-entry-choice small { display: block; font-size: 12px; line-height: 1.8; color: #c2cdb8; margin-top: 7px; }
+.seed-entry-choice.study { background: #282c34; border-color: #656075; color: #d9c8e9; }
+.seed-entry-choice:hover { border-color: #d8bb7f; }
+.seed-entry-choice:disabled { opacity: .55; cursor: wait; }
+.seed-form-section { border-top: 1px solid #3b4c34; padding: 16px 0; }
+.seed-form-section>summary { padding: 4px 0; font-size: 14px; }
+.seed-form-section[open]>summary { margin-bottom: 16px; }
+.seed-field-help { display: block; font-size: 11px; line-height: 1.8; color: #b1c0a4; margin-top: 8px; }
+.seed-essential-fields { grid-template-columns: repeat(3,minmax(0,1fr)); }
+@media (max-width: 1050px) { .seed-essential-fields { grid-template-columns: minmax(0,1fr); } }
 @media (max-width: 760px) {
   .mobile-nav { grid-template-columns: repeat(6,minmax(0,1fr)); }
   .mobile-nav a { min-width: 0; }
@@ -625,6 +640,8 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
   .seed-fields, .seed-score-fields, .seed-lot-grid, .seed-passport { grid-template-columns: minmax(0,1fr); }
   .seed-form input, .seed-form textarea, .seed-form select, .seed-filter select { font-size: 16px; }
   .seed-filter { width: 100%; }
+  .seed-entry-grid { grid-template-columns: minmax(0,1fr); }
+  .seed-entry-choice { padding: 19px; }
 }
 @media (max-width: 1200px) {
   .decision-map-layout { grid-template-columns: minmax(0,1fr); }

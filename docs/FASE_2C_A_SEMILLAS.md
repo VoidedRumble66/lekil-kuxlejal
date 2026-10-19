@@ -114,3 +114,28 @@ No hay movimientos automáticos de inventario, planificación de siembra ni mód
 - Frontend Semillas: `frontend/src/seedApi.ts`, `pages/Seeds.tsx`, `components/SeedForms.tsx`, navegación en `frontend/src/App.tsx`, estilos acotados en `frontend/src/styles.css`.
 - Lenguaje: `frontend/src/components/decisionLanguage.ts`, `components/DecisionMap.tsx`, `pages/Decisions.tsx`.
 - Documentación: este informe, `README.md`, `AGENTS.md`, `docs/API.md` y `docs/MODELO_DATOS.md`.
+
+## Simplificación de Semillas · 19 de octubre de 2026
+
+Se simplificó exclusivamente la presentación de Semillas, conservando contratos, selección, backend, SQLite y migraciones. No se añadieron dependencias ni se modificaron Decisiones, Itzamná, firmware, COM6 o telemetría.
+
+- Entrada «Agregar semillas» con la explicación de lote y dos opciones: «Tengo semillas» (registro físico) y «Quiero estudiar semillas» (tipo hipotético existente, sin afirmar inventario).
+- El formulario comienza con nombre, tipo e identificador. Sugiere un código breve editable con prefijo `SEM` o `EST` y 12 caracteres aleatorios derivados de UUID. Comprueba los códigos cargados; la validación única existente de la API sigue siendo la comprobación definitiva. Los identificadores anteriores no se reemplazan.
+- El resto de los campos se conserva en «Origen y uso responsable», «Cómo se conservan» y «Más información», con ayudas y ejemplos sin datos precargados. Cantidad y variedad son opcionales. Las cantidades hipotéticas se identifican como supuestos, sin presentarlas como existencias físicas.
+- Pruebas y evaluación se ofrecen después de guardar. «Añadir o revisar pruebas» abre los campos existentes de germinación/viabilidad. Guardar y editar siguen usando el pasaporte completo y las versiones de la API actual.
+- También se simplificó la consulta de fichas y versiones históricas con los mismos desplegables. El estado de autorización permanece visible. Un campo obligatorio dentro de un desplegable cerrado abre su sección al validar y recibe el foco.
+
+Verificación: **115 pruebas de backend aprobadas**, **11 pruebas de frontend aprobadas** (8 del mapa existente y 3 de sugerencia de identificadores) y build correcto. La única advertencia del backend continúa siendo la deprecación de Starlette/AnyIO ya documentada.
+
+Pruebas visuales en escritorio y móvil de 390 × 844: dos entradas diferenciadas, alta mínima física e hipotética, identificador editable, ausencia de cantidades y permisos automáticos, campos plegados, acceso posterior a pruebas y validación de unidad con su sección cerrada. Sin desbordamiento horizontal en móvil. Se restauró el tamaño de escritorio al finalizar.
+
+Compatibilidad comprobada en la base temporal de QA anterior: guardar una ficha existente conserva íntegramente su pasaporte (incluido identificador y permiso), evaluaciones, decisiones y versiones previas, y añade únicamente la nueva revisión esperada. No se escribieron ejemplos en la base operativa.
+
+Archivos: `frontend/src/components/SeedForms.tsx`, `frontend/src/components/seedRegistration.ts`, `frontend/src/pages/Seeds.tsx`, estilos acotados en `frontend/src/styles.css`, `frontend/tests/seed-registration.test.mjs` y este informe. Capturas locales excluidas de Git: `output/qa/semillas-simplificadas-escritorio.jpg` y `output/qa/semillas-simplificadas-movil.jpg`.
+
+Para abrirlo, iniciar los servidores habituales y visitar `http://127.0.0.1:5173/semillas`; basta actualizar la página si ya estaban abiertos. Para repetir la verificación desde la raíz:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check.ps1
+node --test frontend/tests/seed-registration.test.mjs frontend/tests/decision-map.test.mjs
+```
