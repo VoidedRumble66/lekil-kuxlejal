@@ -7,13 +7,14 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from .database import utc_now
 from .seed_models import SeedAssessment, SeedDecision, SeedLot, SeedLotRevision, SeedWeightProfile
 from .seed_schemas import (AssessmentInput, CompareInput, CRITERIA, DEFAULT_WEIGHTS,
-                           LotRead, LotUpdate, Passport, SeedDecisionInput, WeightsInput)
+                           LotRead, LotUpdate, Passport, SeedDecisionInput, WeightsInput, record_group)
 
 router = APIRouter(prefix='/api/seeds', tags=['Banco biocultural de semillas'])
 
@@ -73,6 +74,8 @@ def list_lots(session: DB, source_kind: Annotated[str | None, Query(pattern='^(r
 
 @router.post('/lots', response_model=LotRead, status_code=201)
 def create_lot(value: Passport, session: DB):
+    if value.record_kind in ('study', 'simulation') and (value.quantity is not None or value.unit is not None):
+        raise HTTPException(422, 'Un estudio o simulación no registra existencias. Guarda los valores documentados en Pruebas y observaciones, con su procedencia.')
     lock_write(session)
     lot = SeedLot(code=value.code, source_kind=value.source_kind, passport=value.model_dump(mode='json'))
     session.add(lot)
@@ -98,9 +101,24 @@ def update_lot(lot_id: UUID, value: LotUpdate, session: DB):
     lot = lot_or_404(session, lot_id)
     check_revision(lot, value.expected_revision)
     if value.passport.source_kind != lot.source_kind:
-        raise HTTPException(422, 'Un ejemplo hipotético no puede convertirse en un lote real, ni viceversa. Registra otro lote.')
+        raise HTTPException(422, 'No conviertas una ficha sin inventario en semillas físicas, ni viceversa. Registra una ficha separada.')
+    incoming = value.passport.model_dump(mode='json')
+    for key in ('record_kind', 'evidence', 'scenario_assumptions'):
+        if key not in value.passport.model_fields_set and key in lot.passport:
+            incoming[key] = lot.passport[key]
+    # Las actualizaciones de clientes anteriores no borran procedencia añadida.
+    if lot.passport.get('record_kind') is not None and incoming['record_kind'] != lot.passport['record_kind']:
+        raise HTTPException(422, 'La clasificación ya registrada se conserva. Crea una ficha separada para otra finalidad.')
+    if incoming['record_kind'] in ('study', 'simulation'):
+        if (incoming['quantity'], incoming['unit']) != (lot.passport.get('quantity'), lot.passport.get('unit')):
+            if incoming['quantity'] is not None or incoming['unit'] is not None:
+                raise HTTPException(422, 'No añadas inventario a un estudio. Registra el dato y su unidad como evidencia.')
+    try:
+        incoming = Passport.model_validate(incoming).model_dump(mode='json')
+    except ValidationError as exc:
+        raise HTTPException(422, exc.errors()[0]['msg'])
     lot.code = value.passport.code
-    lot.passport = value.passport.model_dump(mode='json')
+    lot.passport = incoming
     lot.revision += 1
     lot.updated_at = utc_now()
     session.add(lot)
@@ -154,7 +172,7 @@ def comparison_view(value: CompareInput, session: Session) -> dict:
     kinds = set()
     for lot_id in value.lot_ids:
         lot = lot_or_404(session, lot_id)
-        kinds.add(lot.source_kind)
+        kinds.add(record_group(lot.passport))
         assessment = latest_assessment(session, lot_id)
         problems = []
         if assessment is None:
@@ -170,7 +188,7 @@ def comparison_view(value: CompareInput, session: Session) -> dict:
                      'assessment': assessment.model_dump(mode='json') if assessment else None,
                      'problems': problems, 'total': assessment.total if assessment and not problems else None})
     if len(kinds) > 1:
-        raise HTTPException(422, 'Compara lotes reales por separado de los ejemplos hipotéticos.')
+        raise HTTPException(422, 'Compara por separado semillas disponibles, cultivos en estudio, simulaciones y fichas antiguas sin clasificar.')
     result = {'complete': all(not row['problems'] for row in rows), 'rows': rows, 'weights': weights,
               'notice': 'Comparación provisional, sin validación científica ni selección automática. Orden de consulta, no clasificación. Revisa sensibilidad a cambios de pesos antes de decidir.'}
     result['comparison_hash'] = sha256(json.dumps(result, sort_keys=True, ensure_ascii=False, allow_nan=False).encode()).hexdigest()

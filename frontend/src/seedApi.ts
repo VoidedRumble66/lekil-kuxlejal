@@ -3,10 +3,17 @@ import { request } from './api'
 export const criteria = ['nutrition', 'resources', 'continuity', 'edible', 'culinary', 'resilience'] as const
 export type Criterion = typeof criteria[number]
 export type Weights = Record<Criterion, number>
+export type RecordKind = 'inventory' | 'study' | 'simulation'
+export type EvidenceKind = 'documentary' | 'manual' | 'instrumental' | 'calculation' | 'simulation'
+export interface SeedEvidence {
+  kind: EvidenceKind; subject: string; content: string; recorded_on: string; method: string; source: string
+  value: number | null; unit: string | null; instrument: string | null; assumptions: string | null
+}
 export interface SeedTest { kind: 'germination' | 'viability'; result: string; tested_on: string | null; method: string | null; source: string }
 export interface Passport {
   common_name: string; scientific_name: string | null; variety: string | null; code: string
   source_kind: 'real' | 'hypothetical'; quantity: number | null; unit: string | null
+  record_kind?: RecordKind | null; evidence?: SeedEvidence[]; scenario_assumptions?: string | null
   provenance: string | null; custodian_entity: string | null
   authorization_status: 'pending' | 'authorized' | 'denied'; use_conditions: string | null; authorization_source: string | null
   received_on: string | null; storage_conditions: string | null; container: string | null; location: string | null
@@ -36,6 +43,7 @@ export const emptyPassport = (): Passport => ({
   common_name: '', scientific_name: null, variety: null, code: '', source_kind: 'real', quantity: null, unit: null,
   provenance: null, custodian_entity: null, authorization_status: 'pending', use_conditions: null, authorization_source: null,
   received_on: null, storage_conditions: null, container: null, location: null, tests: [], observations: null, information_source: null,
+  record_kind: null, evidence: [], scenario_assumptions: null,
 })
 export const passportOf = (lot: SeedLot): Passport => {
   const { id, revision, created_at, updated_at, ...passport } = lot

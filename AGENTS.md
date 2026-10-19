@@ -12,7 +12,7 @@ Placa identificada por el usuario: ESP32 clásico ESP32-D0WD-V3, CH340, COM6, 11
 - Sin instrumentación válida, mostrar «Sin datos», «Sensor no configurado» o «Consumo no medido».
 - Los datos sintéticos solo pueden existir en bases temporales de pruebas.
 - Los escenarios hipotéticos tienen almacenamiento e historial separados de la telemetría. Sus supuestos configurables no son mediciones ni resultados agrícolas reales. Nunca ejecutan comandos físicos.
-- Los lotes de semillas distinguen registros reales y ejemplos hipotéticos. No precargar lotes; conservar pasaportes, fuentes, permisos pendientes y decisiones humanas. Las evaluaciones son provisionales, con pesos y versiones trazables; no seleccionar automáticamente ni completar puntuaciones desconocidas.
+- Semillas distingue inventario físico, cultivos en estudio y simulaciones mediante clasificación explícita del pasaporte. La investigación documental auténtica no se etiqueta automáticamente como hipotética. Conservar los indicadores legados y revisar las fichas antiguas sin convertirlas en inventario. Separar procedencia documental, observación manual, medición instrumental transcrita, cálculo y simulación por dato, con fecha, método, fuente y unidad cuando corresponda. No precargar lotes ni conceder permisos; conservar evaluaciones, decisiones y versiones. No seleccionar automáticamente ni completar puntuaciones desconocidas.
 - Conservar fuente, unidad, calidad, entidad de origen y fecha ISO 8601 con zona horaria; almacenar tiempos en UTC.
 
 ## Arquitectura

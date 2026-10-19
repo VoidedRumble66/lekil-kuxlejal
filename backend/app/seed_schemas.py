@@ -32,12 +32,41 @@ class SeedTest(Input):
     source: Text
 
 
+class SeedEvidence(Input):
+    """Procedencia por dato, independiente de que haya semillas físicas."""
+    kind: Literal['documentary', 'manual', 'instrumental', 'calculation', 'simulation']
+    subject: Name
+    content: Text
+    recorded_on: date
+    method: Text
+    source: Text
+    value: float | None = None
+    unit: Name | None = None
+    instrument: Text | None = None
+    assumptions: Text | None = None
+
+    @model_validator(mode='after')
+    def check_provenance(self):
+        if self.value is not None and self.unit is None:
+            raise ValueError('Un resultado numérico necesita unidad; usa una unidad explícita si es adimensional.')
+        if self.kind == 'instrumental' and self.instrument is None:
+            raise ValueError('Identifica el instrumento y el registro de origen; no se genera telemetría.')
+        if self.kind == 'simulation' and self.assumptions is None:
+            raise ValueError('Un resultado de simulación necesita sus supuestos de escenario.')
+        return self
+
+
 class Passport(Input):
     common_name: Name
     scientific_name: Name | None = None
     variety: Name | None = None
     code: Name
     source_kind: Literal['real', 'hypothetical']
+    # source_kind se conserva como contrato legado de inventario/no inventario.
+    # La clasificación explícita vive en el JSON versionado: no requiere migración.
+    record_kind: Literal['inventory', 'study', 'simulation'] | None = None
+    evidence: list[SeedEvidence] = Field(default_factory=list, max_length=200)
+    scenario_assumptions: Text | None = None
     quantity: float | None = Field(default=None, ge=0, le=1_000_000_000)
     unit: Name | None = None
     provenance: Text | None = None
@@ -55,6 +84,14 @@ class Passport(Input):
 
     @model_validator(mode='after')
     def check_evidence(self):
+        if self.record_kind == 'inventory' and self.source_kind != 'real':
+            raise ValueError('Semillas disponibles requiere un registro físico explícito.')
+        if self.record_kind in ('study', 'simulation') and self.source_kind != 'hypothetical':
+            raise ValueError('Un estudio o simulación no representa inventario físico.')
+        if self.record_kind == 'simulation' and self.scenario_assumptions is None:
+            raise ValueError('Documenta los supuestos del escenario de simulación.')
+        if self.record_kind == 'simulation' and any(item.kind != 'simulation' for item in self.evidence):
+            raise ValueError('Una ficha de simulación contiene resultados simulados; registra las fuentes reales en un estudio separado.')
         if self.quantity is not None and self.unit is None:
             raise ValueError('Una cantidad necesita una unidad documentada.')
         if self.authorization_status != 'pending' and not self.authorization_source:
@@ -62,6 +99,11 @@ class Passport(Input):
         if self.authorization_status == 'authorized' and not self.use_conditions:
             raise ValueError('Registra las condiciones del uso autorizado.')
         return self
+
+
+def record_group(passport: dict) -> str:
+    """No deducir estudio o simulación a partir del valor legado hypothetical."""
+    return passport.get('record_kind') or ('inventory' if passport['source_kind'] == 'real' else 'legacy')
 
 
 class LotUpdate(Input):

@@ -139,3 +139,50 @@ Para abrirlo, iniciar los servidores habituales y visitar `http://127.0.0.1:5173
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check.ps1
 node --test frontend/tests/seed-registration.test.mjs frontend/tests/decision-map.test.mjs
 ```
+
+## Información real e investigación sin inventario · 19 de octubre de 2026
+
+### Problema revisado y decisión sobre SQLite
+
+`source_kind` combinaba presencia física con carácter hipotético. La interfaz etiquetaba automáticamente la investigación sin semillas como hipotética, aunque podía proceder de artículos o documentos auténticos. También faltaba distinguir la procedencia de cada dato: documentación, observación, instrumento, cálculo o simulación.
+
+No bastaba renombrar la interfaz, pero **no hace falta una migración de SQLite**. Los pasaportes ya son JSON validado y versionado. Se ampliaron sus contratos y presentación con clasificación y evidencias explícitas, sin reconstruir tablas ni cambiar `seed_models.py` o migraciones. La base permanece en `0004_seeds`; no se aplica ninguna migración nueva ni se toca la base operativa para la verificación. La condición de respaldo previo a migración no se activa.
+
+### Corrección entregada
+
+- «Cultivos en estudio»: ficha documental de una especie candidata, sin inventario físico. Puede contener información científica auténtica; la existencia o ausencia de semillas no determina la veracidad de los documentos.
+- «Semillas disponibles»: grupos de semillas recibidos o conservados físicamente. Cantidad desconocida sigue siendo nula; no se deduce de artículos, pruebas o permisos.
+- «Pruebas y observaciones»: información con tipo de procedencia, asunto, contenido, fecha, método y fuente. Valores numéricos requieren unidad. Mediciones transcritas identifican instrumento y registro; no se conectan a dispositivos ni escriben en telemetría.
+- «Simulación»: resultados de escenarios supuestos. Requiere supuestos del escenario y de cada resultado, junto con fecha, procedimiento y fuente de la ejecución. No admite información documental presentada como resultado simulado.
+- El panel «Información y respaldo» muestra las fuentes declaradas, datos pendientes y tipos de evidencia por separado. No declara validación científica automática. Los cálculos ponderados de evaluación siguen siendo cálculos, con sus puntuaciones humanas; no se presentan como mediciones.
+- Se aprovechan `information_source`, `provenance`, observaciones y el historial existente. Si falta fecha, método o fuente para un dato nuevo, se puede conservar la nota pendiente sin inventar metadatos. Una referencia general no se extiende automáticamente a todos los datos de la ficha.
+
+Los campos nuevos son `record_kind` (`inventory`, `study`, `simulation` o nulo), `evidence` y `scenario_assumptions`. `source_kind` sigue siendo un indicador legado para compatibilidad: el valor interno `hypothetical` no determina la validez científica; los estudios nuevos se identifican por `record_kind: study`. Los consumidores nuevos deben leer la clasificación explícita. Los contratos están documentados en `docs/API.md`.
+
+### Compatibilidad e integridad
+
+Los registros, identificadores, cantidades anteriores, permisos, evaluaciones, decisiones y snapshots no se reescriben al consultar. Una ficha antigua marcada como no física se muestra «Ficha anterior · por revisar»; no se supone que sea documental ni simulada. Clasificarla requiere una edición humana explícita y crea una nueva revisión. Cantidades heredadas se conservan sin llamarlas inventario; no se permiten nuevas cantidades de existencias en estudios o simulaciones. No se convierte una ficha sin inventario en semillas físicas.
+
+Los clientes anteriores que omiten los campos nuevos al editar conservan la procedencia nueva ya almacenada. Las comparaciones separan inventario, estudios, simulaciones y fichas antiguas sin clasificar, con el mismo cálculo de puntuaciones y las mismas reglas de revisión/permisos. Las evaluaciones y decisiones históricas siguen consultables. Los UUID estables quedan preparados para futuras relaciones con cultivos; no se implementa hidroponía.
+
+### Cómo registrar una investigación auténtica
+
+1. Reiniciar el backend para cargar los contratos nuevos y actualizar la página `http://127.0.0.1:5173/semillas`. No borrar ni reconstruir la base.
+2. Elegir «Cultivos en estudio», escribir el nombre y guardar el identificador sugerido o uno propio. No se requiere cantidad de semillas ni sensores.
+3. En «Más información», registrar nombre científico y fuente general sólo cuando estén documentados. Dejar desconocidos como «Sin datos». Los permisos de uso del material permanecen pendientes hasta su documentación.
+4. Abrir «Pruebas y observaciones» → «Añadir información con fuente» → «Información documental». Transcribir el dato, referencia bibliográfica/DOI/página, fecha de consulta y método de revisión. Si hay valor numérico, indicar la unidad. No se precarga bibliografía ni se inventan resultados.
+5. Si después se documenta una observación, un registro instrumental externo, un cálculo o un resultado simulado, elegir su tipo y registrar su procedencia propia. Los resultados simulados se mantienen identificados como tales.
+6. Guardar y revisar la evidencia en «Información y respaldo». La ficha muestra que no hay existencias registradas. Las semillas que se reciban posteriormente se registran por separado en «Semillas disponibles»; la investigación no se convierte automáticamente en inventario.
+
+### Verificación
+
+**135 pruebas del backend aprobadas**, incluidas 20 verificaciones nuevas de investigación sin inventario, procedencia por tipo, metadatos obligatorios, unidades, supuestos, reinicio, JSON anterior sin reescritura, clasificación humana, separación de comparaciones y compatibilidad de clientes. **14 pruebas del frontend aprobadas**, incluidas clasificación de estudios, no conversión de registros antiguos, identificadores y mapa. Build correcto. Persiste únicamente la advertencia de deprecación de Starlette/AnyIO ya registrada.
+
+Se comprobó en navegador con SQLite temporal: alta documental sin cantidad/autorización, registro y reapertura de fecha/método/fuente, campos pendientes y clasificación antigua por revisar. La vista móvil de 390 × 844 no presenta desbordamiento horizontal. Se restauró el tamaño de escritorio. La captura `output/qa/semillas-investigacion-documental.jpg` pertenece a QA, declara que no contiene datos científicos de una especie y está excluida de Git. No se introdujeron semillas ni resultados en `backend/data/`.
+
+Se modifican contratos y rutas de Semillas, frontend, pruebas y documentación. No se alteran Itzamná, ESP32, firmware, COM6, telemetría, migraciones ni dependencias. La aplicación prepara el registro de evidencia; no valida documentos externos ni sustituye la revisión científica humana.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check.ps1
+node --test frontend/tests/seed-information.test.mjs frontend/tests/seed-registration.test.mjs frontend/tests/decision-map.test.mjs
+```

@@ -630,6 +630,9 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .seed-form-section[open]>summary { margin-bottom: 16px; }
 .seed-field-help { display: block; font-size: 11px; line-height: 1.8; color: #b1c0a4; margin-top: 8px; }
 .seed-essential-fields { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.seed-evidence-overview { padding: 20px; margin: 20px 0; border: 1px solid #48553f; border-radius: 8px; background: #1d2e24; }
+.seed-evidence-overview h3 { margin-top: 0; }
+.seed-evidence-overview h4 { font-size: 14px; color: #ded7c4; margin: 8px 0; }
 @media (max-width: 1050px) { .seed-essential-fields { grid-template-columns: minmax(0,1fr); } }
 @media (max-width: 760px) {
   .mobile-nav { grid-template-columns: repeat(6,minmax(0,1fr)); }

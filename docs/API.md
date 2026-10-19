@@ -109,3 +109,17 @@ La edición usa `{expected_revision, passport}`. Una evaluación usa `{expected_
 Una comparación recibe `{lot_ids}` (2–20 UUID distintos del mismo tipo). Su respuesta conserva el orden consultado, no genera un ranking y contiene `complete`, filas con pendientes, pesos y `comparison_hash`. Una selección requiere decisión humana `seleccionar`, revisión esperada, responsable, motivo, los mismos `lot_ids` bajo `comparison` y el `comparison_hash` revisado. El servidor comprueba datos vigentes y autorización; no ejecuta tareas físicas.
 
 Cambios obsoletos/código duplicado devuelven 409. Comparación incompleta o mezclada y siembra/selección sin autorización devuelven 422. CORS añade `PUT` únicamente para la edición local de lotes; no incorpora métodos de actuación ni escritura de telemetría.
+
+### Clasificación y procedencia científica
+
+El pasaporte JSON añade `record_kind` opcional: `inventory` (Semillas disponibles), `study` (Cultivos en estudio) o `simulation`. Nulo/ausente conserva la clasificación anterior sin reinterpretarla: un indicador legado `hypothetical` no demuestra que la información sea ficticia ni que proceda de una simulación. La interfaz lo muestra como «Ficha anterior · por revisar» hasta una revisión humana explícita. Los registros físicos previos conservan su condición declarada.
+
+`source_kind` permanece por compatibilidad con clientes y tablas existentes: `real` corresponde al inventario y `hypothetical` es el indicador legado de no inventario. Para interpretar la finalidad científica de un registro nuevo se usa `record_kind`, no ese indicador. No se ha modificado el esquema SQL ni la revisión Alembic `0004_seeds`.
+
+`evidence` es una lista versionada por pasaporte. Cada elemento requiere `kind` (`documentary`, `manual`, `instrumental`, `calculation`, `simulation`), `subject`, `content`, `recorded_on` (fecha de consulta para documentación; fecha del hecho/resultado en los demás casos), `method` y `source`. `value` es opcional y exige `unit` cuando se declara, incluso si vale cero. Una medición transcrita exige `instrument`; una simulación exige `assumptions`. No hay ingesta de sensores ni escritura de telemetría desde estos campos.
+
+Una ficha `simulation` requiere además `scenario_assumptions` y sólo admite evidencias de simulación. Un estudio puede conservar varios tipos de evidencia, presentados por separado. Los datos anteriores de `tests` permanecen disponibles sin convertirlos automáticamente en mediciones o simulaciones.
+
+Las fichas nuevas de estudio o simulación no admiten cantidades de inventario. Al clasificar una ficha anterior se pueden conservar cantidades heredadas, etiquetadas sin reinterpretarlas como existencias. No se pueden añadir cantidades nuevas a un estudio; sus valores documentales van en evidencias con unidades. Comparaciones de inventario, estudio, simulación y fichas antiguas sin clasificar se mantienen separadas; no cambia el cálculo de puntuaciones.
+
+Los clientes anteriores que omiten los nuevos campos al editar conservan la clasificación, evidencias y supuestos ya guardados. No hay escritura durante las consultas, conversión automática de inventario ni reescritura de decisiones o versiones antiguas. Para usar los contratos nuevos, reiniciar la API y actualizar el frontend; no borrar la base ni ejecutar una migración adicional.
