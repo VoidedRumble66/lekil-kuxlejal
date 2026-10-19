@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { CheckCheck, History, Play, Scale, X } from 'lucide-react'
 import { PageHeading } from '../components/Shared'
+import DecisionMap from '../components/DecisionMap'
 import { decisionApi } from '../decisionApi'
 import type { Alternative, DecisionRun, ReviewInput, RunSummary, ScenarioInput } from '../decisionApi'
 
@@ -125,6 +126,7 @@ export default function Decisions() {
       <div className="section-title"><h2>2. {run.parameters.name}</h2><span className="tag">SUPUESTOS HIPOTÉTICOS · kWh</span></div>
       <p className="decision-note">Guardado {date(run.created_at)} · {run.parameters.periods} periodos de {number(run.parameters.period_hours)} h · Recorte {number(run.parameters.generation_reduction * 100)} %</p>
       <p className="decision-warning" role="status">{run.result.agricultural_status}</p>
+      <DecisionMap key={run.id} run={run} />
       <details className="panel decision-details"><summary>Parámetros guardados y restricciones</summary><p>{run.parameters.assumptions}</p><p>Inicial: {number(run.parameters.initial_energy_kwh)} kWh · Capacidad: {number(run.parameters.storage_capacity_kwh)} kWh · Reserva: {number(run.parameters.protected_reserve_kwh)} kWh · Límite del módulo: {number(run.parameters.module_daily_limit_kwh)} kWh/24 h.</p><p>Generación bruta por periodo (kWh/24 h): {run.parameters.generation_daily_kwh.map(number).join(' · ')}.</p>{run.parameters.services.map(service => <p key={service.key}>{service.name}: objetivo {number(service.target_daily_kwh)} kWh/24 h; prioridad {number(service.priority)}; mínimo {service.minimum_daily_kwh === null ? 'sin declarar' : `${number(service.minimum_daily_kwh)} kWh/24 h`}. {service.minimum_basis}</p>)}<ul>{run.result.constraints.map(constraint => <li key={constraint}>{constraint}</li>)}</ul><p>{run.result.search.method} Evaluados: {run.result.search.evaluated}; factibles: {run.result.search.feasible}; en frontera: {run.result.search.pareto}.</p>{run.result.rejections.length > 0 && <><h3>Restricciones que descartaron candidatos</h3><ul>{run.result.rejections.map(item => <li key={item.reason}>{item.reason} ({item.count})</li>)}</ul></>}<p>{run.result.attribution}</p><p className="decision-trace">Registro: {run.id}<br />SHA-256 de parámetros, resultado y versión: {run.snapshot_sha256}<br />Huella del motor y versión de adaptación: {run.engine_fingerprint}</p></details>
       {run.result.status === 'infeasible' && <div className="error-notice" role="alert"><p>No hay alternativas factibles con estos supuestos. Revisa energía, reserva, límites y mínimos declarados. No se puede aprobar una alternativa inexistente.</p></div>}
       {run.result.alternatives.map(alternative => {

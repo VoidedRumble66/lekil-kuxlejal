@@ -103,3 +103,35 @@ Resultados verificados el 19/10/2026, Windows, CPython 3.12.14 y Node.js 24.22.0
 - Evidencia visual local: `output/qa/fase2b-decisiones.png` (no se añade a Git). No se arrancó el lector serial ni se modificó la base operativa durante estas comprobaciones.
 
 Los números de resultados anteriores pertenecen únicamente al ejemplo de prueba; no son datos físicos del domo. La ejecución operativa continúa sin sensores ni consumo medido.
+
+## Mejora visual · mapa jerárquico de sólo lectura
+
+El 19/10/2026 se añadió el mapa en Decisiones, conservando tablas, balances, aprobación/rechazo e historial. La referencia visual es `referencias/itzamna_visual/PreziViewer.tsx`, de **Itzamná**: se adaptaron el árbol descendente, las curvas de conexión, el enfoque de nodos, la cámara y el historial de navegación. No se copia la aplicación Next.js ni se adapta la edición de `PriorityDial.tsx`. Ambas referencias se conservan intactas. React, SVG, CSS y Lucide existentes cubren la visualización: **ninguna dependencia nueva**.
+
+La raíz «Domo agrícola» muestra los servicios guardados por la API; el ejemplo inicial tiene Circulación, Iluminación y Ambiente. El selector del mapa cambia exclusivamente la alternativa visualizada. Los nodos se obtienen de `run.parameters` y de la alternativa factible seleccionada en `run.result.alternatives`; no leen el formulario que aún se está editando, sensores, valores precargados ni otro plan. Las asignaciones y déficits se presentan tal como los devolvió la API. Únicamente se escala el objetivo guardado de kWh/24 h a horas del periodo, como en el balance existente.
+
+En la raíz, objetivo y déficit son sumas de los servicios, y la asignación es el consumo por periodo del resultado. El límite del módulo se presenta por separado. La prioridad de la raíz no está declarada en el contrato público y se muestra «No declarada en la API». Una ausencia de valor aparece como «Sin datos»; no se transforma en cero. Sin alternativa factible no se construye un árbol de ejemplo.
+
+El panel presenta objetivo, asignación, déficit, prioridad y unidad. Los anillos de los servicios representan prioridades guardadas; los clics sólo seleccionan y enfocan. La selección utiliza dorado y los demás nodos tonos neutros/violeta; **ningún color significa seguridad ni viabilidad agrícola**. Se conservan las etiquetas «Escenario hipotético» y el estado de factibilidad agrícola de la API.
+
+Controles: selector de alternativa, acercar/alejar, encajar, atrás y volver a la raíz. Se puede desplazar arrastrando el lienzo. Con teclado: Tab recorre controles y llega al árbol; las flechas navegan entre raíz, hijos y hermanos; Inicio vuelve a la raíz, Fin llega al último servicio y Enter/espacio seleccionan. En el lienzo enfocado, las flechas desplazan y +/− cambian el zoom; Escape restablece la raíz. Los nodos tienen semántica de árbol, nivel, selección y foco visible; el panel anuncia la selección. Los títulos largos se limitan a dos líneas en el árbol y se muestran completos en el panel. En ancho reducido, los servicios se distribuyen en columna y el detalle pasa debajo del mapa.
+
+Archivos de esta mejora:
+
+- `frontend/src/components/DecisionMap.tsx`: cámara, controles y panel de inspección.
+- `frontend/src/components/decisionMapModel.ts`: proyección inmutable de la respuesta API, distribución y navegación.
+- `frontend/src/pages/Decisions.tsx`: inserción del mapa, sin alterar el flujo anterior.
+- `frontend/src/styles.css`: estilos acotados y adaptación a pantallas pequeñas.
+- `frontend/tests/decision-map.test.mjs`: pruebas focalizadas en memoria.
+- `frontend/package.json`: comando `npm run test:map`, usando Node.js 24 existente.
+- `docs/FASE_2B_ITZAMNA.md`: atribución, uso y verificación de la mejora.
+
+Verificación final:
+
+- `npm.cmd run test:map`, desde `frontend/`: **8 pruebas pasaron**. Comprueban procedencia por alternativa, campos y unidad, escala de objetivo, ausencia de valores, alternativas infactibles, inmutabilidad, navegación y separación de hasta cuatro servicios en escritorio/móvil.
+- `scripts/check.ps1`: **89 pruebas del backend pasaron** (8,23 s); aviso de deprecación existente en Starlette/AnyIO, sin fallos. Usa bases temporales propias.
+- `npm.cmd run build`, después de los últimos ajustes CSS: **TypeScript y Vite correctos** (14,90 s de build Vite).
+- Navegador con la API local existente: se abrió una comparación ya guardada (ocho periodos, recorte 40 %) y se contrastaron los datos del mapa con las tablas. Se verificaron cambio de alternativa, selección de hijos mediante flechas, prioridad y déficit en el panel, zoom, atrás y regreso a la raíz. Las seis tablas de las tres alternativas conservaron su contenido; cero errores de consola.
+- Vista móvil a **390 × 844 px**: sin desbordamiento horizontal del documento ni superposición entre los cuatro nodos. Se restauró el tamaño normal del navegador al terminar.
+- **53 archivos protegidos de backend, migraciones, firmware y referencias sin cambios**, comprobados por SHA-256. La mejora no modifica el algoritmo, contratos de API, esquema SQLite, firmware ni COM6. La comprobación visual sólo leyó comparaciones existentes y no registró decisiones nuevas; no se detuvieron los servidores que ya estaban en ejecución.
+- Captura del mapa con Alternativa 1 seleccionada: `output/qa/fase2b-mapa.jpg`, excluida de Git.
