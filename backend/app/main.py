@@ -15,6 +15,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
 
 from .database import build_engine, migrate_database, utc_now
+from .decision_routes import router as decision_router
 from .models import Device, DeviceEvent, Measurement, Zone
 from .schemas import DeviceCreate, DeviceRead, DeviceEventRead, HealthRead, TelemetryRead, ZoneCreate, ZoneRead
 from .device_service import device_view, ingest_event, load_ingest_token
@@ -124,9 +125,10 @@ def create_app(database_url: str | None = None) -> FastAPI:
 
     application = FastAPI(
         title="LEKIL KUXLEJAL · DOMO VITAL",
-        version="0.2.0",
+        version="0.3.0",
         description=(
             "Fase 2A: configuración y diagnóstico serial del ESP32, sin sensores. "
+            "Fase 2B: escenarios hipotéticos con Itzamná y revisión humana, separados de telemetría. "
             "Modo observación. Control físico deshabilitado. "
             "API local sin autenticación; iniciar exclusivamente en 127.0.0.1."
         ),
@@ -151,6 +153,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
         return JSONResponse(status_code=503, content={"detail": "La base de datos no está disponible."})
 
     application.include_router(router)
+    application.include_router(decision_router)
     return application
 
 

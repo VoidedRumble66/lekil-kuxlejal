@@ -2,7 +2,7 @@
 
 ## Alcance actual
 
-La entrega activa autorizada es **Fase 2A: integración serial real del ESP32**, según el encargo del usuario. No avanzar a Fase 2B. Revisar únicamente código y documentación relevantes; no releer el expediente completo ni lanzar agentes paralelos.
+La entrega activa autorizada es **Fase 2B: gobernanza agrícola hipotética con Itzamná**, según el encargo del usuario. Preservar Fases 1 y 2A y no avanzar a otra fase. Revisar únicamente código y documentación relevantes; no releer el expediente completo ni lanzar agentes paralelos. No modificar `referencias/itzamna_motor/`; sus verificadores `auditoria_2026` son independientes del algoritmo.
 
 Placa identificada por el usuario: ESP32 clásico ESP32-D0WD-V3, CH340, COM6, 115200, PlatformIO `esp32dev`, Arduino. Sin sensores. El lector serial es un proceso independiente de sólo lectura; envía diagnósticos a FastAPI y nunca escribe directamente en SQLite. No hay actuación ni datos ambientales sintéticos.
 
@@ -11,7 +11,7 @@ Placa identificada por el usuario: ESP32 clásico ESP32-D0WD-V3, CH340, COM6, 11
 - La base operativa inicia vacía. No crear lecturas, reservas, cosechas, resultados ni estados estables ficticios.
 - Sin instrumentación válida, mostrar «Sin datos», «Sensor no configurado» o «Consumo no medido».
 - Los datos sintéticos solo pueden existir en bases temporales de pruebas.
-- Los futuros escenarios tienen almacenamiento e historial separados de la telemetría. Nunca ejecutan comandos físicos.
+- Los escenarios hipotéticos tienen almacenamiento e historial separados de la telemetría. Sus supuestos configurables no son mediciones ni resultados agrícolas reales. Nunca ejecutan comandos físicos.
 - Conservar fuente, unidad, calidad, entidad de origen y fecha ISO 8601 con zona horaria; almacenar tiempos en UTC.
 
 ## Arquitectura
@@ -35,5 +35,5 @@ Placa identificada por el usuario: ESP32 clásico ESP32-D0WD-V3, CH340, COM6, 11
 - Usar `scripts/check.ps1`: ejecuta pytest con temporales aislados por ejecución y `npm run build` en `frontend/`. Para verificaciones individuales, usar el entorno Python del proyecto y una base temporal propia.
 - Probar persistencia con bases temporales. Nunca introducir fixtures en `backend/data/`.
 - Comprobar estados de error y ausencia de datos. Ningún botón debe aparentar una función todavía no implementada.
-- Documentar límites y resultados de esta entrega en `docs/FASE_2A_SERIAL.md`; conservar el informe histórico de Fase 1.
+- Documentar límites y resultados de esta entrega en `docs/FASE_2B_ITZAMNA.md`; conservar los informes históricos de Fases 1 y 2A.
 - Mantener cambios y commits acotados. No incluir entornos, dependencias, bases operativas ni documentos privados en Git.

@@ -4,6 +4,7 @@ from alembic import context
 from sqlmodel import SQLModel
 
 from app import models  # noqa: F401: registra metadatos para autogeneración
+from app import decision_models  # noqa: F401: historial hipotético separado
 from app.database import build_engine, resolve_database_url, migration_connection
 
 config = context.config

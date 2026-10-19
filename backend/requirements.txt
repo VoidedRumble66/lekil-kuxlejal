@@ -4,3 +4,4 @@ pydantic==2.11.4
 sqlmodel==0.0.24
 alembic==1.15.2
 pyserial==3.5
+numpy==2.2.6
