@@ -63,7 +63,7 @@ def test_first_start_migrates_without_seeding_data(client, application):
     assert_utc(telemetry["queried_at"])
     with application.state.engine.connect() as connection:
         assert connection.execute(text("PRAGMA foreign_keys")).scalar_one() == 1
-        assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0003_decisions"
+        assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0004_seeds"
         assert connection.execute(text("SELECT count(*) FROM measurements")).scalar_one() == 0
 
 
@@ -191,7 +191,9 @@ def test_database_failure_is_not_reported_as_healthy(client, application, monkey
 def test_no_ingestion_actuation_or_destructive_endpoints(client):
     paths = client.get("/openapi.json").json()["paths"]
     assert set(paths) == {"/api/health", "/api/zones", "/api/devices", "/api/telemetry", "/api/devices/{device_id}/events", "/api/internal/serial-events",
-                          "/api/decisions/runs", "/api/decisions/runs/{run_id}", "/api/decisions/runs/{run_id}/reviews"}
+                          "/api/decisions/runs", "/api/decisions/runs/{run_id}", "/api/decisions/runs/{run_id}/reviews",
+                          "/api/seeds/lots", "/api/seeds/lots/{lot_id}", "/api/seeds/weights", "/api/seeds/compare",
+                          "/api/seeds/lots/{lot_id}/assessments", "/api/seeds/lots/{lot_id}/decisions", "/api/seeds/lots/{lot_id}/history"}
     assert set(paths["/api/telemetry"]) == {"get"}
     assert client.post("/api/telemetry", json={}).status_code == 405
     assert client.delete("/api/zones").status_code == 405

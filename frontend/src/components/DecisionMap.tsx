@@ -5,6 +5,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent } from 'react'
 import { ArrowLeft, Focus, Home, Minus, Plus } from 'lucide-react'
+import { agriculturalMessage, priorityMessage } from './decisionLanguage'
 import type { DecisionRun } from '../decisionApi'
 import { adjacentNode, buildMapNodes, layoutMap } from './decisionMapModel'
 import type { DecisionMapNode } from './decisionMapModel'
@@ -99,7 +100,8 @@ export default function DecisionMap({ run }: { run: DecisionRun }) {
   }
 
   return <section className="panel decision-map" aria-label="Mapa jerárquico de la alternativa">
-    <div className="decision-map-heading"><div><span className="eyebrow">ESCENARIO HIPOTÉTICO · SÓLO LECTURA</span><h3>Mapa del domo</h3></div>
+    <p className="decision-warning"><strong>Escenario de prueba — valores hipotéticos</strong><br />Las cifras son cálculos del escenario, no mediciones físicas.</p>
+    <div className="decision-map-heading"><div><span className="eyebrow">Consulta: no modifica el sistema</span><h3>Mapa del domo</h3></div>
       {alternatives.length > 0 && <label>Alternativa del mapa<select value={alternativeId} onChange={event => {
         setAlternativeId(event.target.value); setActiveId('domo'); setHistory([])
       }}>{alternatives.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>}
@@ -132,7 +134,7 @@ export default function DecisionMap({ run }: { run: DecisionRun }) {
             <div role="tree" aria-label={`Jerarquía de ${alternative.label}`}>
               {nodes.map(node => <button key={node.id} type="button" role="treeitem" aria-level={node.parentId === null ? 1 : 2}
                 aria-expanded={node.parentId === null ? true : undefined} aria-selected={node.id === active.id}
-                aria-label={`${node.title}, asignación ${format(node.allocation)} ${node.unit}, sólo lectura`}
+                aria-label={`${node.title}, asignación ${format(node.allocation)} ${node.unit}, consulta: no modifica el sistema`}
                 tabIndex={node.id === active.id ? 0 : -1} ref={element => { buttons.current[node.id] = element }}
                 className={`decision-map-node ${node.kind}${node.id === active.id ? ' selected' : ''}`}
                 style={{ left: layout.positions[node.id].x, top: layout.positions[node.id].y }}
@@ -147,17 +149,17 @@ export default function DecisionMap({ run }: { run: DecisionRun }) {
           <span className="eyebrow">{active.kind === 'module' ? 'RAÍZ · SUMA DE SERVICIOS' : 'SERVICIO · HIJO DEL DOMO'}</span><h4>{active.title}</h4>
           <dl><div><dt>Objetivo por periodo</dt><dd>{format(active.target)} {active.unit}</dd></div>
             <div><dt>Asignación por periodo</dt><dd>{format(active.allocation)} {active.unit}</dd></div>
-            <div><dt>Déficit frente al objetivo</dt><dd>{format(active.deficit)} {active.unit}</dd></div>
-            <div><dt>Prioridad declarada (0–1)</dt><dd>{active.priority === null ? 'No declarada en la API' : format(active.priority)}</dd></div>
+            <div><dt>Energía que falta para alcanzar la meta</dt><dd>{format(active.deficit)} {active.unit}</dd></div>
+            <div><dt>Prioridad declarada (0–1)</dt><dd>{active.priority === null ? priorityMessage(active.kind === 'module') : format(active.priority)}</dd></div>
             {active.moduleLimit !== undefined && <div><dt>Límite del módulo por periodo</dt><dd>{format(active.moduleLimit)} {active.unit}</dd></div>}
           </dl>
-          <p>El déficit corresponde al objetivo hipotético, no a necesidades de supervivencia.</p><p>{run.result.agricultural_status}</p>
+          <p>El déficit corresponde al objetivo hipotético, no a necesidades de supervivencia.</p><p>{agriculturalMessage(run.result.agricultural_status)}</p>
           {active.parentId !== null && <button type="button" className="button button-outline" onClick={() => goRoot(true)}><Home size={15} />Ir al domo agrícola</button>}
         </aside>
       </div>
       <p id={instructionsId} className="decision-map-help">Selecciona un nodo para examinarlo. En los nodos: flechas para navegar; Inicio para la raíz; Enter o espacio para seleccionar. En el lienzo: arrastra o usa flechas para desplazar; + y − para zoom. Los anillos representan prioridades guardadas y no se pueden editar.</p>
       <p className="decision-map-disclaimer">Los colores distinguen selección y jerarquía; no indican seguridad ni viabilidad agrícola. Escenario hipotético, sin sensores simulados.</p>
     </>}
-    <footer className="decision-map-attribution">Adaptación visual inspirada en PreziViewer de Itzamná · API local · Sólo lectura.</footer>
+    <footer className="decision-map-attribution">Adaptación visual inspirada en PreziViewer de Itzamná · Consulta: no modifica el sistema.</footer>
   </section>
 }

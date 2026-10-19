@@ -1,8 +1,8 @@
-# API local de Fase 1
+# API local · DOMO VITAL
 
 Base: `http://127.0.0.1:8000/api`. OpenAPI: `http://127.0.0.1:8000/openapi.json`; explorador: `http://127.0.0.1:8000/docs`.
 
-JSON con nombres `snake_case`. Identificadores UUID. Fechas ISO 8601 UTC con `Z` o desplazamiento explícito. No hay autenticación en esta fase: ejecutar en la interfaz local. No hay rutas de ingesta, escenarios ni comandos físicos.
+JSON con nombres `snake_case`. Identificadores UUID. Fechas de auditoría ISO 8601 UTC con `Z` o desplazamiento explícito; fechas documentales de semillas usan `YYYY-MM-DD`. No hay autenticación de usuarios: ejecutar en la interfaz local. El contrato inicial de observación se conserva abajo como referencia histórica. Diagnóstico serial en `FASE_2A_SERIAL.md`, escenarios en `FASE_2B_ITZAMNA.md` y Semillas en `FASE_2C_A_SEMILLAS.md`. No hay comandos físicos.
 
 ## Contratos implementados
 
@@ -97,3 +97,15 @@ El contrato está definido por los esquemas Pydantic y el OpenAPI generado por e
 Sin variables de entorno, la base es `backend/data/lekil.db`. `DATABASE_URL` acepta sólo SQLite persistente: por ejemplo, `sqlite:///data/otro-banco.db` se resuelve respecto de `backend/`, mientras una ruta absoluta conserva su ubicación. No se admiten bases en memoria para la operación del servicio. Cambiar la variable elige otro archivo; no migra los datos del archivo anterior.
 
 El inicio aplica `alembic upgrade head`. Para aplicarlo manualmente desde la raíz con el entorno del proyecto: `.\.venv\Scripts\python.exe -m alembic -c backend/alembic.ini upgrade head`. La revisión inicial es `0001_observation`. Su `downgrade` destructivo está bloqueado para preservar el historial; una recuperación exige respaldo y revisión explícita.
+
+## Banco de semillas · Fase 2C-A
+
+Prefijo `/api/seeds`. `GET/POST /lots`, `GET/PUT /lots/{lot_id}`, `GET/POST /weights`, `POST /lots/{lot_id}/assessments`, `POST /compare`, `POST /lots/{lot_id}/decisions` y `GET /lots/{lot_id}/history`. Detalles, reglas y flujo en [FASE_2C_A_SEMILLAS.md](FASE_2C_A_SEMILLAS.md).
+
+El pasaporte requiere nombre común, código único y `source_kind` (`real` o `hypothetical`). Los datos desconocidos son nulos, sin resultados autogenerados. Autorización `pending` de manera predeterminada; `authorized` y `denied` requieren fuente documental, y `authorized` exige condiciones de uso. No hay campos para personas custodias ni vistas de publicación.
+
+La edición usa `{expected_revision, passport}`. Una evaluación usa `{expected_revision, weight_profile_id, scores, responsible}`; `scores` incluye los seis criterios, cada uno nulo o `{value, justification, source}`. Escala provisional 0–5; total sólo con seis puntuaciones. `weight_profile_id` nulo representa los pesos iniciales propuestos, sin precargar tablas.
+
+Una comparación recibe `{lot_ids}` (2–20 UUID distintos del mismo tipo). Su respuesta conserva el orden consultado, no genera un ranking y contiene `complete`, filas con pendientes, pesos y `comparison_hash`. Una selección requiere decisión humana `seleccionar`, revisión esperada, responsable, motivo, los mismos `lot_ids` bajo `comparison` y el `comparison_hash` revisado. El servidor comprueba datos vigentes y autorización; no ejecuta tareas físicas.
+
+Cambios obsoletos/código duplicado devuelven 409. Comparación incompleta o mezclada y siembra/selección sin autorización devuelven 422. CORS añade `PUT` únicamente para la edición local de lotes; no incorpora métodos de actuación ni escritura de telemetría.

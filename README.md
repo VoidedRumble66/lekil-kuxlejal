@@ -1,6 +1,6 @@
 # LEKIL KUXLEJAL MARTE · DOMO VITAL
 
-Sistema local de observación y registro para el módulo agrícola. **Entrega actual: Fase 2B**, comparación de escenarios energéticos hipotéticos con Itzamná y revisión humana en Decisiones. Conserva la integración serial real del ESP32 clásico por COM6. Uso, supuestos, pruebas y límites en [docs/FASE_2B_ITZAMNA.md](docs/FASE_2B_ITZAMNA.md); diagnóstico físico en [docs/FASE_2A_SERIAL.md](docs/FASE_2A_SERIAL.md).
+Sistema local de observación y registro para el módulo agrícola. **Entrega actual: Fase 2C-A**, banco biocultural de semillas, evaluación provisional y decisiones humanas, con lenguaje claro en Decisiones. Conserva los escenarios energéticos de Fase 2B. Conserva la integración serial real del ESP32 clásico por COM6. Uso, pruebas y límites de Semillas en [docs/FASE_2C_A_SEMILLAS.md](docs/FASE_2C_A_SEMILLAS.md); escenarios en [docs/FASE_2B_ITZAMNA.md](docs/FASE_2B_ITZAMNA.md); diagnóstico físico en [docs/FASE_2A_SERIAL.md](docs/FASE_2A_SERIAL.md).
 
 Una instalación nueva comienza vacía. El lector identifica la placa mediante mensajes físicos válidos; esta entrega conserva un dispositivo real y sus diagnósticos. No hay sensores ni generador de telemetría: las mediciones ambientales siguen vacías. Estar conectado requiere un heartbeat de no más de 10 segundos. El control físico está deshabilitado.
 
@@ -55,7 +55,8 @@ Orden: backend, frontend, lector. Abre [Configuración](http://127.0.0.1:5173/co
 - Consultar conectado, desconectado o comunicación caducada, última comunicación, chip, firmware y uptime del último mensaje.
 - Configurar un recorte hipotético de generación (40 % y cinco periodos de 24 h como ejemplo editable), comparar hasta tres alternativas energéticamente factibles y registrar aprobación/rechazo con responsable y motivo.
 - Reabrir parámetros, balances y revisiones guardados en un historial separado de la telemetría. El cálculo usa el núcleo local proporcionado en `referencias/itzamna_motor/`, sin modificarlo ni consultar internet.
-- Navegar por Inicio, Domo, Recursos, Decisiones y Alertas. Los módulos posteriores se identifican como pendientes.
+- Registrar y editar lotes en [Semillas](http://127.0.0.1:5173/semillas), documentar conservación y pruebas, evaluar seis criterios con pesos revisables y conservar decisiones humanas. Los datos desconocidos permanecen pendientes y los ejemplos hipotéticos se distinguen de los lotes reales.
+- Navegar por Inicio, Domo, Recursos, Decisiones, Semillas y Alertas. Los módulos posteriores se identifican como pendientes.
 - Reintentar una consulta cuando la API falla. La interfaz muestra el fallo en lugar de presentar valores de demostración.
 
 SQLite se crea en `backend/data/lekil.db`. Al iniciar, Alembic aplica las migraciones pendientes sin introducir registros. La ubicación se puede cambiar con `DATABASE_URL`; consulta `docs/API.md` y `docs/ARQUITECTURA.md`. No borres la base para actualizar: utiliza migraciones y conserva copias de seguridad.
@@ -98,6 +99,6 @@ Empieza por `docs/PLAN_TECNICO.md` y `docs/ROADMAP.md`. Los documentos fuente y 
 
 ## Límites de la entrega y siguiente fase
 
-Están implementados identificación serial, heartbeat, reconexión y vigencia de comunicación, más el demostrador hipotético de decisiones energéticas. Continúan pendientes sensores ambientales, calibración, alertas agronómicas, recursos medidos, validación agrícola, cultivos, alimentos y cultura. No se dibujan curvas físicas ficticias ni se habilitan modos asistido o automático.
+Están implementados identificación serial, heartbeat, reconexión y vigencia de comunicación, más el demostrador hipotético de decisiones energéticas y el banco de semillas con evaluación provisional. Continúan pendientes sensores ambientales, calibración, alertas agronómicas, recursos medidos, validación agrícola, cultivos, alimentos y cultura. No se dibujan curvas físicas ficticias ni se habilitan modos asistido o automático.
 
-La Fase 2B conserva el diagnóstico de la placa sin sensores y no envía comandos físicos. No se avanzará a otra fase sin nueva autorización del usuario.
+La Fase 2C-A conserva el diagnóstico de la placa sin sensores y no envía comandos físicos. La comparación de semillas no valida científicamente los lotes ni elige automáticamente. No se avanzará a otra fase sin nueva autorización del usuario.

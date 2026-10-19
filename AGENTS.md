@@ -2,7 +2,7 @@
 
 ## Alcance actual
 
-La entrega activa autorizada es **Fase 2B: gobernanza agrícola hipotética con Itzamná**, según el encargo del usuario. Preservar Fases 1 y 2A y no avanzar a otra fase. Revisar únicamente código y documentación relevantes; no releer el expediente completo ni lanzar agentes paralelos. No modificar `referencias/itzamna_motor/`; sus verificadores `auditoria_2026` son independientes del algoritmo.
+La entrega activa autorizada es **Fase 2C-A: lenguaje claro y banco biocultural de semillas**, según el encargo del usuario. Preservar Fases 1, 2A y 2B; no avanzar a hidroponía ni a otra fase. Revisar únicamente código y documentación relevantes y el capítulo 6 necesario; no releer el expediente completo ni lanzar agentes paralelos. No modificar `referencias/itzamna_motor/`; sus verificadores `auditoria_2026` son independientes del algoritmo.
 
 Placa identificada por el usuario: ESP32 clásico ESP32-D0WD-V3, CH340, COM6, 115200, PlatformIO `esp32dev`, Arduino. Sin sensores. El lector serial es un proceso independiente de sólo lectura; envía diagnósticos a FastAPI y nunca escribe directamente en SQLite. No hay actuación ni datos ambientales sintéticos.
 
@@ -12,6 +12,7 @@ Placa identificada por el usuario: ESP32 clásico ESP32-D0WD-V3, CH340, COM6, 11
 - Sin instrumentación válida, mostrar «Sin datos», «Sensor no configurado» o «Consumo no medido».
 - Los datos sintéticos solo pueden existir en bases temporales de pruebas.
 - Los escenarios hipotéticos tienen almacenamiento e historial separados de la telemetría. Sus supuestos configurables no son mediciones ni resultados agrícolas reales. Nunca ejecutan comandos físicos.
+- Los lotes de semillas distinguen registros reales y ejemplos hipotéticos. No precargar lotes; conservar pasaportes, fuentes, permisos pendientes y decisiones humanas. Las evaluaciones son provisionales, con pesos y versiones trazables; no seleccionar automáticamente ni completar puntuaciones desconocidas.
 - Conservar fuente, unidad, calidad, entidad de origen y fecha ISO 8601 con zona horaria; almacenar tiempos en UTC.
 
 ## Arquitectura
@@ -35,5 +36,5 @@ Placa identificada por el usuario: ESP32 clásico ESP32-D0WD-V3, CH340, COM6, 11
 - Usar `scripts/check.ps1`: ejecuta pytest con temporales aislados por ejecución y `npm run build` en `frontend/`. Para verificaciones individuales, usar el entorno Python del proyecto y una base temporal propia.
 - Probar persistencia con bases temporales. Nunca introducir fixtures en `backend/data/`.
 - Comprobar estados de error y ausencia de datos. Ningún botón debe aparentar una función todavía no implementada.
-- Documentar límites y resultados de esta entrega en `docs/FASE_2B_ITZAMNA.md`; conservar los informes históricos de Fases 1 y 2A.
+- Documentar límites y resultados de esta entrega en `docs/FASE_2C_A_SEMILLAS.md`; conservar los informes históricos de Fases 1, 2A y 2B.
 - Mantener cambios y commits acotados. No incluir entornos, dependencias, bases operativas ni documentos privados en Git.

@@ -16,6 +16,7 @@ from sqlmodel import Session, select
 
 from .database import build_engine, migrate_database, utc_now
 from .decision_routes import router as decision_router
+from .seed_routes import router as seed_router
 from .models import Device, DeviceEvent, Measurement, Zone
 from .schemas import DeviceCreate, DeviceRead, DeviceEventRead, HealthRead, TelemetryRead, ZoneCreate, ZoneRead
 from .device_service import device_view, ingest_event, load_ingest_token
@@ -125,10 +126,11 @@ def create_app(database_url: str | None = None) -> FastAPI:
 
     application = FastAPI(
         title="LEKIL KUXLEJAL · DOMO VITAL",
-        version="0.3.0",
+        version="0.4.0",
         description=(
             "Fase 2A: configuración y diagnóstico serial del ESP32, sin sensores. "
             "Fase 2B: escenarios hipotéticos con Itzamná y revisión humana, separados de telemetría. "
+            "Fase 2C-A: banco de semillas y evaluación provisional con decisiones humanas. "
             "Modo observación. Control físico deshabilitado. "
             "API local sin autenticación; iniciar exclusivamente en 127.0.0.1."
         ),
@@ -144,7 +146,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
             "http://127.0.0.1:4173",
         ],
         allow_credentials=False,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "PUT", "OPTIONS"],
         allow_headers=["Content-Type"],
     )
 
@@ -154,6 +156,7 @@ def create_app(database_url: str | None = None) -> FastAPI:
 
     application.include_router(router)
     application.include_router(decision_router)
+    application.include_router(seed_router)
     return application
 
 

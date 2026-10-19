@@ -1,3 +1,4 @@
+import { agriculturalMessage } from '../components/decisionLanguage'
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { CheckCheck, History, Play, Scale, X } from 'lucide-react'
@@ -91,7 +92,7 @@ export default function Decisions() {
 
   return <>
     <PageHeading title="Decisiones" description="Gobernanza agrícola con Itzamná. Compara supuestos energéticos y registra la revisión humana." />
-    <div className="info-strip"><Scale size={22} /><p><strong>ESCENARIO HIPOTÉTICO · Sin conexión con el control físico.</strong> Todos los números del formulario son supuestos configurables. Las alternativas son factibles energéticamente bajo esos supuestos; no certifican viabilidad agrícola. La persona responsable decide.</p></div>
+    <div className="info-strip"><Scale size={22} /><p><strong>Escenario de prueba — valores hipotéticos</strong><br />Las cifras son cálculos del escenario, no mediciones físicas. Todos los números del formulario son supuestos configurables. Las alternativas son factibles energéticamente bajo esos supuestos; no certifican viabilidad agrícola. La persona responsable decide. Sin conexión con el control físico.</p></div>
     {error && <div className="error-notice" role="alert"><p>{error}</p></div>}
     {notice && <div className="success-notice" role="status"><CheckCheck size={18} />{notice}</div>}
 
@@ -111,7 +112,7 @@ export default function Decisions() {
           <Numeric label="Límite del módulo padre (kWh/24 h)" value={parameters.module_daily_limit_kwh} onChange={value => update('module_daily_limit_kwh', value)} />
         </div>
         <details open><summary>Generación antes del recorte · supuestos en kWh/24 h</summary><p>Se escala a las horas del periodo y se aplica el recorte una sola vez. Entra al almacenamiento antes del consumo; el exceso se vierte.</p><div className="decision-fields">{parameters.generation_daily_kwh.map((value, index) => <Numeric key={index} label={`Generación periodo ${index + 1}`} value={value} onChange={newValue => update('generation_daily_kwh', parameters.generation_daily_kwh.map((old, i) => i === index ? newValue : old))} />)}</div></details>
-        <details><summary>Servicios, prioridades y mínimos opcionales · todos hipotéticos</summary><p>El objetivo es un límite de asignación configurable, no una necesidad de supervivencia. Sin mínimos y procedencia para todos los servicios: «Factibilidad agrícola no evaluada».</p>{parameters.services.map((service, index) => <div className="decision-service" key={service.key}><h3>Servicio hipotético {index + 1}</h3><div className="decision-fields">
+        <details><summary>Servicios, prioridades y mínimos opcionales · todos hipotéticos</summary><p>El objetivo es un límite de asignación configurable, no una necesidad de supervivencia. Sin mínimos y procedencia para todos los servicios: «Aún no sabemos si estos recursos bastan para los cultivos».</p>{parameters.services.map((service, index) => <div className="decision-service" key={service.key}><h3>Servicio hipotético {index + 1}</h3><div className="decision-fields">
           <label>Nombre del servicio<input required maxLength={80} value={service.name} onChange={e => update('services', parameters.services.map((old, i) => i === index ? { ...old, name: e.target.value } : old))} /></label>
           <Numeric label={`Objetivo ${service.name} (kWh/24 h)`} value={service.target_daily_kwh} onChange={value => update('services', parameters.services.map((old, i) => i === index ? { ...old, target_daily_kwh: value } : old))} />
           <Numeric label={`Prioridad ${service.name} (0–1)`} value={service.priority} max={1} onChange={value => update('services', parameters.services.map((old, i) => i === index ? { ...old, priority: value } : old))} />
@@ -125,7 +126,7 @@ export default function Decisions() {
     {run && <section id="decision-results" className="decision-results" aria-label="Resultado de comparación">
       <div className="section-title"><h2>2. {run.parameters.name}</h2><span className="tag">SUPUESTOS HIPOTÉTICOS · kWh</span></div>
       <p className="decision-note">Guardado {date(run.created_at)} · {run.parameters.periods} periodos de {number(run.parameters.period_hours)} h · Recorte {number(run.parameters.generation_reduction * 100)} %</p>
-      <p className="decision-warning" role="status">{run.result.agricultural_status}</p>
+      <p className="decision-warning" role="status">{agriculturalMessage(run.result.agricultural_status)}</p>
       <DecisionMap key={run.id} run={run} />
       <details className="panel decision-details"><summary>Parámetros guardados y restricciones</summary><p>{run.parameters.assumptions}</p><p>Inicial: {number(run.parameters.initial_energy_kwh)} kWh · Capacidad: {number(run.parameters.storage_capacity_kwh)} kWh · Reserva: {number(run.parameters.protected_reserve_kwh)} kWh · Límite del módulo: {number(run.parameters.module_daily_limit_kwh)} kWh/24 h.</p><p>Generación bruta por periodo (kWh/24 h): {run.parameters.generation_daily_kwh.map(number).join(' · ')}.</p>{run.parameters.services.map(service => <p key={service.key}>{service.name}: objetivo {number(service.target_daily_kwh)} kWh/24 h; prioridad {number(service.priority)}; mínimo {service.minimum_daily_kwh === null ? 'sin declarar' : `${number(service.minimum_daily_kwh)} kWh/24 h`}. {service.minimum_basis}</p>)}<ul>{run.result.constraints.map(constraint => <li key={constraint}>{constraint}</li>)}</ul><p>{run.result.search.method} Evaluados: {run.result.search.evaluated}; factibles: {run.result.search.feasible}; en frontera: {run.result.search.pareto}.</p>{run.result.rejections.length > 0 && <><h3>Restricciones que descartaron candidatos</h3><ul>{run.result.rejections.map(item => <li key={item.reason}>{item.reason} ({item.count})</li>)}</ul></>}<p>{run.result.attribution}</p><p className="decision-trace">Registro: {run.id}<br />SHA-256 de parámetros, resultado y versión: {run.snapshot_sha256}<br />Huella del motor y versión de adaptación: {run.engine_fingerprint}</p></details>
       {run.result.status === 'infeasible' && <div className="error-notice" role="alert"><p>No hay alternativas factibles con estos supuestos. Revisa energía, reserva, límites y mínimos declarados. No se puede aprobar una alternativa inexistente.</p></div>}

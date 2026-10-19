@@ -68,3 +68,11 @@ Las rutas actuales no eliminan ni reescriben historial. La integridad referencia
 Los escenarios tendrán tablas e historial independientes. La privacidad de bienestar y los permisos culturales requieren controles antes de habilitar esos módulos. No se incorpora contenido restringido ni consentimientos supuestos como datos iniciales.
 
 Los formatos del expediente orientan la trazabilidad futura: ciclo, incidente y receta (p. 58); ciencia con identidad (p. 59); órdenes, responsabilidades y excepciones de emergencia (p. 60).
+
+## Banco biocultural implementado · Fase 2C-A
+
+La migración `0004_seeds` incorpora `seed_lots`, `seed_lot_revisions`, `seed_weight_profiles`, `seed_assessments` y `seed_decisions`, sin precargas ni cambios en telemetría. Los pasaportes se validan por Pydantic y se conservan como documentos JSON versionados. Cantidades desconocidas son nulas; resultados de prueba exigen fuente, sin inventar fecha o método.
+
+Cada lote tiene UUID estable, código único y tipo real/hipotético inmutable. Las evaluaciones referencian una revisión existente del pasaporte por clave foránea compuesta; guardan puntuaciones, fuentes, justificaciones y pesos propios. Pesos y evaluaciones anteriores no se sobrescriben. Las decisiones conservan una copia completa de datos y, al seleccionar, la comparación revisada. La edición controla la revisión esperada y las escrituras se serializan en SQLite.
+
+Los UUID quedan disponibles para relaciones futuras desde zonas/ciclos mediante migraciones adicionales. No se crean ciclos hidropónicos ni asociaciones físicas en esta entrega. El modelo y las limitaciones están en [FASE_2C_A_SEMILLAS.md](FASE_2C_A_SEMILLAS.md).
